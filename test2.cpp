@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <tuple>
+#include <map>
 
 using namespace std;
 
@@ -34,19 +35,40 @@ tuple<vector<char*>,vector<char*>,vector<char*>> SearchFileFileds(string filePat
 		//提取url
 		char* ur = new char[fileString.length()];
 		ur = p;
-		char j = 'h';
-		char k = 't';
-		char l = 'p';
+		char j, k, h, l;
+		
+		string st = "http";
+		char* sst = new char[5];
 
-		while ((*(ur++)) != '\0') {
-			if (4 == sscanf(ur, "%c%c%c%c", &j,&k,&k,&l)) {
-				char* out_ip = new char[200];
-				memset(out_ip, '\0', sizeof(out_ip));
+		while (*ur != '\0') {
+			if (4 == sscanf(ur, "%c%c%c%c", &j,&k,&h,&l)) {
+				sst[0] = j;
+				sst[1] = k;
+				sst[2] = h;
+				sst[3] = l;
+				sst[4] = '\0';
+				if (st._Equal(sst)) {
+					char* out_ip = new char[2000];
+					char* out = out_ip;
 
-				while ((*(ur++)) != '\"' && (*(ur++)) != ' ') {
-					*(out_ip++) = *ur;
+					int num = 0;
+					bool flag = false;
+					while ((*ur) != '\"' && (*ur) != ' ' && (*ur) != '\0' && (*ur) != ',') {
+						if ((num == 4) && (*ur == 's' || *ur == ':') ){
+							flag = true;;
+						}
+						num++;
+						*out_ip = *ur;
+						out_ip++;
+						*out_ip = '\0';
+						ur++;
+					}
+					if(flag)
+						resurls.push_back(out); 
 				}
-				resurls.push_back(out_ip);
+			}
+			if (*ur != '\0') {
+				ur++;
 			}
 		}
 
@@ -68,7 +90,6 @@ tuple<vector<char*>,vector<char*>,vector<char*>> SearchFileFileds(string filePat
 						memset(out_ip, '\0', sizeof(out_ip));
 
 						sprintf(out_ip, "%d.%d.%d.%d", a, b, c, d);
-						// printf("IPv4: %d.%d.%d.%d\n",a,b,c,d);
 						resip.push_back(out_ip);
 						set = true;
 					}
@@ -85,15 +106,16 @@ tuple<vector<char*>,vector<char*>,vector<char*>> SearchFileFileds(string filePat
 		pos = p;
 		int m, n;
 
-		while (*((pos)++) != '\0') {
+		while (*(pos++) != '\0') {
 			if (2 == sscanf(pos, "%d/%d", &m, &n)) {
-
 				resf.push_back(p);
 				break;
 			}
 		}
 	}
 	
+	fs.close();
+
 	return make_tuple(resurls,resip,resf);
 }
 
@@ -110,19 +132,26 @@ int main()
 	resip = get<1>(tup);
 	resf = get<2>(tup);
 
+	ofstream os;     //创建一个文件输出流对象
+	os.open("20240123.txt");//将对象与文件关联
+
 	//处理url
 	if (resurls.empty()) {
 		cout << "No urls" << endl;
 	}
 	else {
-		cout << resurls.size() << endl;
+		cout <<"可重复uri个数："<<resurls.size() << endl;
+
 		set<string> map;
+		os << "去重前uri个数：" << resurls.size() << endl;
 		for (const auto& it:resurls) {
 			cout << it << endl;
+			os << it << endl;
 			string s = it;
 			map.insert(s);
 		}
-		cout << map.size() << endl;
+		os << "去重前uri个数：" << map.size() << endl;
+		cout << "无重复url个数："<<map.size() << endl;
 	}
 
 	//处理ip地址
@@ -132,16 +161,18 @@ int main()
 	}
 	else
 	{
-		cout << resip.size() << endl;
+		cout << "可重复ip地址个数"<<resip.size() << endl;
 		set<string> map;
 		for (const auto& it:resip) {
 			cout << it << endl;
 			string s = it;
 			map.insert(s);
 		}
-		cout<<map.size()<<endl;
+		cout<< "无重复ip地址个数"<<map.size()<<endl;
+		os << "去重后ip地址个数:" << map.size() << endl;
 		for (const auto& it:map) {
 			cout << it << endl;
+			os << it<<endl;
 		}
 	}
 
@@ -150,10 +181,14 @@ int main()
 		cout << "No F" << endl;
 	}
 	else {
+		os << "进度对应log列：" << endl;
 		for (const auto& it : resf) {
 			cout << it << endl;
+			os << it<<endl;
 		}
 	}
+
+	os.close();
 
 	return 0;
 }
